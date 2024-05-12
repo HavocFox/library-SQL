@@ -2,9 +2,9 @@ import mysql.connector #importing the mysql connector library that we pip instal
 from mysql.connector import Error
 
 def connect_db():
-    db_name = "ecomm_db" #specifying
+    db_name = "library_db" #specifying
     user = "root" #selecting our user
-    password = "BAC146" #grant access to db
+    password = "himic80" #grant access to db
     host = "127.0.0.1" #setting host localhost == 127.0.0.1
 
     #Establishing Connection
@@ -17,7 +17,6 @@ def connect_db():
         )
 
         if conn.is_connected():
-            print("Connected to MySQL Database")
             return conn # Returning our connection to be used elsewhere
 
     except Error as e:

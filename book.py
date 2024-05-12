@@ -36,16 +36,32 @@ class Book:
 
    # Add a book (Based on input from Operations) ------------------------
     @classmethod
+
+    # Remember to:  Check dupes
     def add_book(self, title1, author1, isbn1, genre1, pubdate1):
+        conn = connect_db()
+        if conn is not None:
+            try:
+                cursor = conn.cursor()
 
-        if title1 in self.all_books:                                                                         # Make sure title isn't already in the library
-            print("Book with the same title already exists!\n")
-            return
-        new_book = Book(title = title1, author = author1, isbn = isbn1, genre = genre1, pubdate = pubdate1)  # Create a new Book object
-        self.all_books[title1] = new_book               # Add the book to the dictionary with title as key
+                # Check if the book already exists
+                query = "SELECT * FROM Books WHERE title = %s AND author = %s"
+                cursor.execute(query, (title1, author1))
+                existing_book = cursor.fetchone()
 
-        if User.first_user == False:                    # We add books when we start the program, this is to prevent spam of the "added successfully!" message.
-            print("Book added successfully!\n")
+                if existing_book:
+                    print("A book with the same title and author already exists.")
+                else:
+                    # Insert the new book
+                    new_book = (title1, author1, isbn1, genre1, pubdate1)
+                    insert_query = "INSERT INTO Books (title, author, isbn, genre, publication_date) VALUES (%s, %s, %s, %s, %s)"
+                    cursor.execute(insert_query, new_book)
+                    conn.commit()                       # fully commits the changes
+                    print(f"Book added successfully!")
+
+            except Error as e:
+                print(f"Error: {e}")
+
 
     # Borrow a book ------------------------------------------------------
     def borrow_book():
@@ -98,10 +114,22 @@ class Book:
     # Search for a book ------------------------------------------------------
     def display_book():
         print("\nDisplaying all books: ")
-        if Book.all_books:                                                                   # Just checking that we have books to display.
-            for title, book in Book.all_books.items():                                       # We're making it easier to get individual pieces if we have each grabbed per iteration through the loop.
-                print(f"Title: {book.get_title()}, Author: {book.get_author()}, ISBN: {book.get_isbn()}, Genre: {book.get_genre()}, Publication Date: {book.get_pubdate()}, Is it available? {book.is_available()}\n")
+
+        conn = connect_db()
+        if conn is not None:
+            try:
+                cursor = conn.cursor()
+
+                # Check if the book already exists
+                query = "SELECT * from Books"
+                cursor.execute(query)
+                for row in cursor.fetchall():
+                    print(row)
+
+                
+            except Error as e:
+                print(f"Error: {e}")
         else:
-            print("There aren't any books in the library.\n")                                # This shouldn't happen, but...
+                print("There aren't any books in the library.\n")
 
 from user import User       # Import User for tracking their books while we're borrowing and such.
