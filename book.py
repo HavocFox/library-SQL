@@ -1,4 +1,5 @@
 from sql_connect import connect_db, Error
+from datetime import date
 
 class Book:
     all_books = {}
@@ -37,7 +38,6 @@ class Book:
    # Add a book (Based on input from Operations) ------------------------
     @classmethod
 
-    # Remember to:  Check dupes
     def add_book(self, title1, author1, isbn1, genre1, pubdate1):
         conn = connect_db()
         if conn is not None:
@@ -53,14 +53,19 @@ class Book:
                     print("A book with the same title and author already exists.")
                 else:
                     # Insert the new book
-                    new_book = (title1, author1, isbn1, genre1, pubdate1)
+                    new_pubdate = date.today().isoformat()
+                    new_book = (title1, author1, isbn1, genre1, new_pubdate)
                     insert_query = "INSERT INTO Books (title, author, isbn, genre, publication_date) VALUES (%s, %s, %s, %s, %s)"
                     cursor.execute(insert_query, new_book)
-                    conn.commit()                       # fully commits the changes
+                    conn.commit()                                    # fully commits the changes
                     print(f"Book added successfully!")
 
             except Error as e:
                 print(f"Error: {e}")
+
+            finally:
+                cursor.close() # Don't forget to close!
+                conn.close()
 
 
     # Borrow a book ------------------------------------------------------
@@ -68,48 +73,125 @@ class Book:
         print("Which book would you like to borrow? ")
         book_title = input("Please enter its title: ")  # We're storing books by title, so look for that.
 
-        if book_title in Book.all_books:                # Is it actually in the library?
-            book = Book.all_books[book_title]
-            if book.is_available():
-                book.set_availability(False)                                         # Mark the book as borrowed if it is.
-                User.all_users[User.current_user].get_borrowed_books().append(book_title)     # Append the title of the book to the list of borrowed books PER specific user.
-                print(f"{book_title} has been borrowed.\n")                          # Let the user know what they did.
-            else:
-                print(f"{book_title} has already been borrowed.\n")                  # Is the book already unavailable?
+        conn = connect_db()
+        if conn is not None:
+            try:
+                cursor = conn.cursor()
+
+                # Check if the book exists and is available
+                query = "SELECT * FROM Books WHERE title = %s AND availability = 1"
+                cursor.execute(query, (book_title,))
+                existing_book = cursor.fetchone()
+                cursor.fetchall()
+
+                if existing_book:
+                    name1 = User.current_user
+                    # Update the availability of the book
+                    book_id = existing_book[0]
+                    query = "UPDATE Books SET availability = 0 WHERE id = %s"
+                    cursor.execute(query, (book_id,))
+                    conn.commit()
+
+                    # Add to the user's borrowed books
+                    query = f"INSERT INTO {name1}_BorrowedBooks (title) VALUES %s"
+                    cursor.execute(query, (book_title,))
+                    conn.commit()
+
+                    print(f"{book_title} has been borrowed.\n")  # Let the user know what they did.
+                else:
+                    print("No book with that title exists or your book has already been borrowed.\n")
+
+            except Error as e:
+                print(f"Error: {e}")
+
+            finally:
+                cursor.close() # Don't forget to close!
+                conn.close()
+
         else:
-            print(f"'{book_title}' is not in the library.\n")                        # We don't even have that book.
+            print("Failed to connect to the database.")
+
+
+
 
     # Return a book ------------------------------------------------------
     def return_book():
         print("Which book would you like to return? ")
         book_title = input("Please enter its title: ")  # We're storing books by title, so look for that.
 
-        if book_title in Book.all_books:                # Is it actually in the library?
-            book = Book.all_books[book_title]
-            if not book.is_available():
-                if book_title in User.all_users[User.current_user].get_borrowed_books():                # Did the current user actually borrow this book? Can't return what you don't have.
-                    book.set_availability(True)                                                         # Mark the book as returned.
-                    User.all_users[User.current_user].get_borrowed_books().remove(book_title)           # Remove the book object from the list of borrowed books PER user.
-                    print(f"{book_title} has been returned.\n")                                         # Let the user know what they did.
+        conn = connect_db()
+        if conn is not None:
+            try:
+                cursor = conn.cursor()
+                name1 = User.current_user
+
+                # Check if the book exists and is NOT available
+                query = "SELECT * FROM Books WHERE title = %s AND availability = 0"
+                cursor.execute(query, (book_title,))
+                existing_book = cursor.fetchone()
+                cursor.fetchall()
+
+                if existing_book:
+                    # Update the availability of the book
+                    book_id = existing_book[0]
+                    query = "UPDATE Books SET availability = 1 WHERE id = %s"
+                    cursor.execute(query, (book_id,))
+                    conn.commit()
+
+                    # Remove the book from the user's borrowed books
+                    delete_query = f"DELETE FROM {name1}_BorrowedBooks WHERE book_title = %s"
+                    cursor.execute(delete_query, (book_title,))
+                    conn.commit()
+
+                    print(f"{book_title} has been returned.\n")  # Let the user know what they did.
                 else:
-                    print("Another user borrowed this book. To return it, please switch to that user. ")
-            else:
-                print(f"{book_title} has already been returned.\n")                  # Is the book already available?
+                    print("No book with that title exists or your book has already been returned.\n")
+
+            except Error as e:
+                print(f"Error: {e}")
+
+            finally:
+                cursor.close() # Don't forget to close!
+                conn.close()
+
         else:
-            print(f"'{book_title}' is not in the library.\n")                        # We don't even have that book.
+            print("Failed to connect to the database.")
 
     # Search for a book ------------------------------------------------------
     def search_book():
         book_title = input("Please enter the title of the book you'd like to search for: ")  # We're storing books by title, so look for that.
 
-        if Book.all_books:
-            if book_title in Book.all_books:
-                book = Book.all_books[book_title]                                            # We're making it easier to get individual pieces if we have each grabbed per iteration through the loop.
-                print(f"Title: {book.get_title()}, Author: {book.get_author()}, ISBN: {book.get_isbn()}, Genre: {book.get_genre()}, Publication Date: {book.get_pubdate()}, Is it available? {book.is_available()}\n")
-            else:
-                print(f"'{book_title}' is not in the library.\n")                            # We don't even have that book.
+
+
+        conn = connect_db()
+        if conn is not None:
+            try:
+                cursor = conn.cursor()
+
+                # Check if the book exists and is NOT available
+                query = "SELECT * FROM Books WHERE title = %s"
+                cursor.execute(query, (book_title,))
+                existing_book = cursor.fetchone()
+                cursor.fetchall()
+
+                if existing_book:
+                    print("Book found!")
+                    book_id = existing_book[0]
+                    for id in book_id:
+                        print(id)
+
+                else:
+                    print("No book with that title exists.")
+                
+            except Error as e:
+                print(f"Error: {e}")
+
+            finally:
+                cursor.close() # Don't forget to close!
+                conn.close()
+                                
         else:
-            print("There aren't any books in the library.\n")                                # This shouldn't happen, but...
+                print("There aren't any books in the library.\n")
 
     # Search for a book ------------------------------------------------------
     def display_book():
@@ -126,9 +208,13 @@ class Book:
                 for row in cursor.fetchall():
                     print(row)
 
-                
             except Error as e:
                 print(f"Error: {e}")
+
+            finally:
+                cursor.close() # Don't forget to close!
+                conn.close()
+                                
         else:
                 print("There aren't any books in the library.\n")
 

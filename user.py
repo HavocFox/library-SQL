@@ -22,29 +22,56 @@ class User:
     # Add a user (Based on input from Operations) ------------------------
     @classmethod
     def add_user(self, name1, userid1):
+        conn = connect_db()
+        if conn is not None:
+            try:
+                cursor = conn.cursor()
 
-        if name1 in self.all_users:
-            user_switch = input("This user already exists. Would you like to switch to this user? Y or N. ").upper()    # We already have this user, so are you trying to log into it?
-            if user_switch == 'Y':                                                                                      # Basically a roundabout way of preventing duplicates.
-                print(f"User switched to {name1}.\n")
-                User.current_user = name1                    # Let user's class-level tracking update to reflect the switch.
-                return
-        new_user = User(name = name1, library_id = userid1)  # Create a new Book object
-        self.all_users[name1] = new_user                     # Add the book to the dictionary with title as key
+                # Check if the user already exists
+                query = "SELECT * FROM Users WHERE name = %s"
+                cursor.execute(query, (name1, userid1))
+                existing_user = cursor.fetchone()
+                cursor.fetchall()                       # Prevent unread results
 
-        print("User added successfully!\n")
-        if User.first_user == True:                          # Checking if this is the first logged in User - AKA, don't ask to switch if there's no one to switch to
-            User.first_user = False                          # Now we can switch if this is called again
-            return
-        else:
-            switchchoice = input("Would you like to switch to this user? Y or N. ").upper()         # Basically "Now that we added this user, wanna use it?"
-            if switchchoice == 'Y':
-                print(f"User switched to {name1}.\n")
-                User.current_user = name1                                                           # Let user's class-level tracking update to reflect the switch.
+                # Is this NOT the first logged in user, and we already have the entered user?
+                if existing_user and User.first_user == False:                          # Checking if this is the first logged in User - AKA, don't ask to switch if there's no one to switch to
+                    user_switch = input("This user already exists. Would you like to switch to this user? Y or N. ").upper()
 
-                return
-            else:
-                return                                       # You don't have to switch, though.
+                if user_switch == 'Y':
+                    print(f"User switched to {name1}.\n")
+                    User.current_user = name1                                           # Let user's class-level tracking update to reflect the switch.
+                    return
+
+                else:
+                    # Insert the new user
+                    new_user = (name1, userid1)
+                    query = "INSERT INTO Users (name, libid) VALUES (%s, %s)"
+                    cursor.execute(query, new_user)
+                    conn.commit()                                                                       # fully commits the changes
+                    print(f"User added successfully!")
+                    User.first_user = False
+
+                    # Create a table for borrowed books for the new user if it doesn't exist
+                    query = f"CREATE TABLE IF NOT EXISTS {name1}_BorrowedBooks (id INT AUTO_INCREMENT PRIMARY KEY, book_title VARCHAR(255) NOT NULL, borrow_date DATE NOT NULL)"
+                    cursor.execute(query)
+                    conn.commit()
+
+                    # Now that you added it, would you like to use it?
+                    user_switch = input("Would you like to switch to this user? Y or N. ").upper()
+
+                    if user_switch == 'Y':                                                  # Basically a roundabout way of preventing duplicates.
+                        print(f"User switched to {name1}.\n")
+                        User.current_user = name1                                           # Let user's class-level tracking update to reflect the switch.
+                        return
+                    else:
+                        return                                                              # It's not required.
+
+            except Error as e:
+                print(f"Error: {e}")
+
+            finally:
+                cursor.close() # Don't forget to close!
+                conn.close()
 
     # Display user details --------------------------------------------------
     def user_details():

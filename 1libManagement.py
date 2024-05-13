@@ -46,6 +46,7 @@ Menu.main_menu()                                                # Now we call th
     # Am I able to submit the SQL library I made or do I need to create tables within the program?
     # Checking for duplicate entries
     # Checking for correctly formatted entries
-    # Fix the weird datetime thing
+    # Fix the weird datetime thing - borrow_date = date.today().isoformat() this?
     # How do we get all the garbage entries out of the table?
-    # Should we still track the current user's books? CAN we? Might need to create a table per user.
+    # We are still tracking user's books with separate tables. Need to figure out how to display that per details.
+    # Don't forget to close the connection when quitting!
