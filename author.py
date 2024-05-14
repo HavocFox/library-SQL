@@ -17,29 +17,89 @@ class Author:
     @classmethod
     def add_author(self, name1, bio1):
 
-        if name1 in self.all_authors:                           # Prevent dupes.
-            print("This author is already in the database.\n")
-            return
-        else:
-            pass
-        new_auth = Author(name1, bio1)                          # Create a new Author object
-        self.all_authors[name1] = new_auth                      # Add the Author to the dictionary with name as key
+        conn = connect_db()
+        if conn is not None:
+            try:
+                cursor = conn.cursor()
+
+                # Check if the author already exists
+                query = "SELECT * FROM Authors WHERE name = %s AND bio = %s"
+                cursor.execute(query, (name1, bio1))
+                existing_auth = cursor.fetchone()
+
+                if existing_auth:
+                    print("This author is already present in the database.")
+                else:
+                    # Insert the new book
+                    new_auth = (name1, bio1)
+                    insert_query = "INSERT INTO Authors (name, bio) VALUES (%s, %s)"
+                    cursor.execute(insert_query, new_auth)
+                    conn.commit()                                    # fully commits the changes
+                    print(f"Author added successfully!")
+
+            except Error as e:
+                print(f"Error: {e}")
+
+            finally:
+                cursor.close() # Don't forget to close!
+                conn.close()
 
     # Display author details ------------------------------------------------------
     def auth_details():
         auth_choice = input("What author do you want to view the details of? ")     # Using name as key.
-        if auth_choice in Author.all_authors:                                       # Do they exist in the dictionary?
-            cur_auth = Author.all_authors[auth_choice]  
-            print(f"Name: {cur_auth.get_name()}\nBiography: {cur_auth.get_biography()}\n")
+        conn = connect_db()
+        if conn is not None:
+            try:
+                cursor = conn.cursor()
+
+                # Check if the author exists
+                query = "SELECT * FROM Authors WHERE name = %s"
+                cursor.execute(query, (auth_choice,))
+                existing_auth = cursor.fetchone()
+                cursor.fetchall()
+
+                if existing_auth:
+                    print("Book found!")
+                    auth_id = existing_auth[0]
+                    print(f"Author Details: {auth_id}")
+
+                else:
+                    print("That author could not be found.")
+                
+            except Error as e:
+                print(f"Error: {e}")
+
+            finally:
+                cursor.close() # Don't forget to close!
+                conn.close()
+                                
         else:
-            print("That author has no details in our database.\n")          # We don't have that author's fine details. But we don't necessarily not have them listed as having written a book we have.
+                print("There aren't any authors in the database.\n")
 
 
     # Display all authors ------------------------------------------------------
     def display_authors():
-        print("\nDisplaying all authors:")                      # Simple display using getters. Uses newline before bio since biographies could be long.
-        if Author.all_authors:
-            for name, auth in Author.all_authors.items():
-                print(f"Name: {auth.get_name()}\nBiography: {auth.get_biography()}\n")
+        print("\nDisplaying all authors: ")
+
+        conn = connect_db()
+        if conn is not None:
+            try:
+                cursor = conn.cursor()
+
+                query = "SELECT * from Authors"
+                cursor.execute(query)
+                if cursor.fetchall():
+                    for row in cursor.fetchall():
+                        print(row)
+                else:
+                    print("No authors could be found.")
+
+            except Error as e:
+                print(f"Error: {e}")
+
+            finally:
+                cursor.close() # Don't forget to close!
+                conn.close()
+                                
         else:
-            print("There aren't any authors in the database.\n")                    # Shouldn't happen, but...
+                print("There aren't any authors in the database.\n")

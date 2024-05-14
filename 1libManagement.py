@@ -44,9 +44,8 @@ Menu.main_menu()                                                # Now we call th
     # Add some default authors
 
     # Am I able to submit the SQL library I made or do I need to create tables within the program?
-    # Checking for duplicate entries
+    # Get printed details formatted better, tuples printing looks like shit.
     # Checking for correctly formatted entries
     # Fix the weird datetime thing - borrow_date = date.today().isoformat() this?
-    # How do we get all the garbage entries out of the table?
-    # We are still tracking user's books with separate tables. Need to figure out how to display that per details.
+    # How do we get all the garbage entries out of the table? - USE MYSQL and delete them but BE CAREFUL or you might wipe the table. Manually add in some new books when you're done - same for authors
     # Don't forget to close the connection when quitting!

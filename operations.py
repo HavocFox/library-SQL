@@ -2,6 +2,7 @@ from sql_connect import connect_db, Error
 import re
 # Only using RegEx here.
 # This module is used for operations that take input or are more complicated to run inside the respective classes.
+# We don't need SQL in this part of the app, since it is only gathering the values that we are passing to SQL.
 
 class Operations:
 # BOOK OPERATIONS ----------------------------------------------

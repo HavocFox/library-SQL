@@ -53,8 +53,7 @@ class Book:
                     print("A book with the same title and author already exists.")
                 else:
                     # Insert the new book
-                    new_pubdate = date.today().isoformat()
-                    new_book = (title1, author1, isbn1, genre1, new_pubdate)
+                    new_book = (title1, author1, isbn1, genre1, pubdate1)
                     insert_query = "INSERT INTO Books (title, author, isbn, genre, publication_date) VALUES (%s, %s, %s, %s, %s)"
                     cursor.execute(insert_query, new_book)
                     conn.commit()                                    # fully commits the changes
@@ -93,7 +92,7 @@ class Book:
                     conn.commit()
 
                     # Add to the user's borrowed books
-                    query = f"INSERT INTO {name1}_BorrowedBooks (title) VALUES %s"
+                    query = f"INSERT INTO {name1}_BorrowedBooks (book_title) VALUES (%s)"
                     cursor.execute(query, (book_title,))
                     conn.commit()
 
@@ -161,8 +160,6 @@ class Book:
     def search_book():
         book_title = input("Please enter the title of the book you'd like to search for: ")  # We're storing books by title, so look for that.
 
-
-
         conn = connect_db()
         if conn is not None:
             try:
@@ -177,8 +174,7 @@ class Book:
                 if existing_book:
                     print("Book found!")
                     book_id = existing_book[0]
-                    for id in book_id:
-                        print(id)
+                    print(f"Book ID: {book_id}")
 
                 else:
                     print("No book with that title exists.")
@@ -205,8 +201,11 @@ class Book:
                 # Check if the book already exists
                 query = "SELECT * from Books"
                 cursor.execute(query)
-                for row in cursor.fetchall():
-                    print(row)
+                if cursor.fetchall():
+                    for row in cursor.fetchall():
+                        print(row)
+                else:
+                    print("No books found.")
 
             except Error as e:
                 print(f"Error: {e}")

@@ -27,44 +27,121 @@ class User:
             try:
                 cursor = conn.cursor()
 
-                # Check if the user already exists
-                query = "SELECT * FROM Users WHERE name = %s"
+            # Check if the user already exists
+                query = "SELECT * FROM Users WHERE name = %s AND libid = %s"
                 cursor.execute(query, (name1, userid1))
                 existing_user = cursor.fetchone()
-                cursor.fetchall()                       # Prevent unread results
+                cursor.fetchall()
 
-                # Is this NOT the first logged in user, and we already have the entered user?
-                if existing_user and User.first_user == False:                          # Checking if this is the first logged in User - AKA, don't ask to switch if there's no one to switch to
+            # Is this NOT the first logged in user, and we already have the entered user?
+                if existing_user and not User.first_user:  # Checking if this is not the first logged in user
                     user_switch = input("This user already exists. Would you like to switch to this user? Y or N. ").upper()
 
-                if user_switch == 'Y':
-                    print(f"User switched to {name1}.\n")
-                    User.current_user = name1                                           # Let user's class-level tracking update to reflect the switch.
-                    return
+                    if user_switch == 'Y':
+                        print(f"User switched to {name1}.\n")
+                        User.current_user = name1  # Update current user
+                        return
 
                 else:
-                    # Insert the new user
-                    new_user = (name1, userid1)
+                # Insert the new user
                     query = "INSERT INTO Users (name, libid) VALUES (%s, %s)"
-                    cursor.execute(query, new_user)
-                    conn.commit()                                                                       # fully commits the changes
+                    cursor.execute(query, (name1, userid1))
+                    conn.commit()  # fully commit the changes
                     print(f"User added successfully!")
-                    User.first_user = False
 
-                    # Create a table for borrowed books for the new user if it doesn't exist
-                    query = f"CREATE TABLE IF NOT EXISTS {name1}_BorrowedBooks (id INT AUTO_INCREMENT PRIMARY KEY, book_title VARCHAR(255) NOT NULL, borrow_date DATE NOT NULL)"
+                # Create a table for borrowed books for the new user if it doesn't exist
+                    query = f"CREATE TABLE IF NOT EXISTS {name1}_BorrowedBooks (id INT AUTO_INCREMENT PRIMARY KEY, book_title VARCHAR(255) NOT NULL)"
                     cursor.execute(query)
                     conn.commit()
 
-                    # Now that you added it, would you like to use it?
-                    user_switch = input("Would you like to switch to this user? Y or N. ").upper()
+                # Now that you added it, would you like to use it?
+                    if not User.first_user:
+                        user_switch = input("Would you like to switch to this user? Y or N. ").upper()
 
-                    if user_switch == 'Y':                                                  # Basically a roundabout way of preventing duplicates.
-                        print(f"User switched to {name1}.\n")
-                        User.current_user = name1                                           # Let user's class-level tracking update to reflect the switch.
-                        return
+                        if user_switch == 'Y':
+                            print(f"User switched to {name1}.\n")
+                            User.current_user = name1  # Update current user
+                            return
                     else:
-                        return                                                              # It's not required.
+                        User.current_user = name1
+                        print("Introductory user added successfully.")
+                        User.first_user = False
+                        return  # It's not required.
+
+            except Error as e:
+                print(f"Error: {e}")
+
+            finally:
+                cursor.close()  # Don't forget to close!
+                conn.close()
+
+
+    # Display user details --------------------------------------------------
+    def user_details():
+        print("\nViewing details of current user: ")
+
+        conn = connect_db()
+        if conn is not None:
+            try:
+                cursor = conn.cursor()
+                nameget = User.current_user
+
+                query = "SELECT * FROM Users WHERE name = %s"
+                cursor.execute(query, (User.current_user,))
+                existing_user = cursor.fetchone()
+                cursor.fetchall()
+
+                if existing_user:
+                    print(f"User Details:\n {existing_user}")
+                    # Retrieve borrowed books for the current user
+                    query = f"SELECT * FROM {User.current_user}_BorrowedBooks"
+                    cursor.execute(query)
+                    borrowed_books = cursor.fetchall()
+                    if borrowed_books:
+                        print("Borrowed books:")
+                        for book_row in borrowed_books:
+                            print(book_row)
+                    else:
+                        print("No borrowed books.")
+
+                else:
+                    print("Something went wrong, but did not trigger an exception. Try checking your semantics.")
+                
+            except Error as e:
+                print(f"Error: {e}")
+
+            finally:
+                cursor.close() # Don't forget to close!
+                conn.close()
+                                
+        else:
+                print("Failed to connect.\n")
+
+    # Search for a book ------------------------------------------------------
+    def display_users():
+        print("\nDisplaying all users:")
+    
+        conn = connect_db()
+        if conn is not None:
+            try:
+                cursor = conn.cursor()
+
+                query = "SELECT * FROM Users"
+                cursor.execute(query)
+                for user_row in cursor.fetchall():
+                    user_name = user_row[1]  # Assuming name is in the second column
+                    print(f"User: {user_name}")
+                
+                    # Retrieve borrowed books for the current user
+                    query = f"SELECT * FROM {user_name}_BorrowedBooks"
+                    cursor.execute(query)
+                    borrowed_books = cursor.fetchall()
+                    if borrowed_books:
+                        print("Borrowed books:")
+                        for book_row in borrowed_books:
+                            print(book_row)
+                    else:
+                        print("No borrowed books.")
 
             except Error as e:
                 print(f"Error: {e}")
@@ -73,35 +150,7 @@ class User:
                 cursor.close() # Don't forget to close!
                 conn.close()
 
-    # Display user details --------------------------------------------------
-    def user_details():
-        print("Viewing details of current user:")
-        if User.current_user in User.all_users:
-            curuser = User.all_users[User.current_user]         # Pick up that one user so we can call getters on it.
-            print(f"Name: {curuser.get_name()}, Library ID: {curuser.get_library_id()} \nBooks borrowed:")
-            borrowed_books = curuser.get_borrowed_books()
-            if borrowed_books:                                  # Do they have anything borrowed?
-                for book in borrowed_books:
-                    print(book)                                 # Just print its title.
-            else:
-                print("None borrowed\n")                        # Prevents weird blank output if they don't have anything.
         else:
-            print("Current user does not exist.")               # this should not happen!
+            print("Failed to connect to the database.")
 
-
-    # Search for a book ------------------------------------------------------
-    def display_users():
-        print("\nDisplaying all users:")
-        if User.all_users:
-            for name, user in User.all_users.items():
-                print(f"Name: {user.get_name()}, Library ID: {user.get_library_id()}\nBooks borrowed:")
-                borrowed_books = user.get_borrowed_books()
-                if borrowed_books:                                # Do they have anything borrowed?
-                    for book in borrowed_books:
-                        print(book)                               # Just print its title.
-                else:
-                    print("None borrowed")                        # Prevents weird blank output if they don't have anything.
-                print()                                           # Add an empty line between users for better readability
-        else:
-            print("There aren't any users.\n")                    # Realistically this would never trigger, though
 

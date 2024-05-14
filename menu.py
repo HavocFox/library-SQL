@@ -7,7 +7,7 @@ class Menu:
     def book_menu():
         print("\n----------------------------------------------------------")
         while True:
-            print("Book Operations:")
+            print("\nBook Operations:")
             print("     1. Add a new book\n     2. Borrow a book\n     3. Return a book\n     4. Search for a book\n     5. Display all books\n     6. Back to main menu")
             try:
                 bookchoice = int(input("Please enter a numeric selection. "))       # Try to catch weird entries. We DO need to have ints here.
@@ -39,7 +39,7 @@ class Menu:
         print("\n----------------------------------------------------------")
 
         while True:
-            print("User Operations:")
+            print("\nUser Operations:")
             print("     1. Add a new user\n     2. View user details\n     3. Display all users\n     4. Back to main menu")
             try:
                 userchoice = int(input("Please enter a numeric selection. "))       # Try to catch weird entries. We DO need to have ints here.
@@ -65,7 +65,7 @@ class Menu:
         print("\n----------------------------------------------------------")
 
         while True:
-            print("Author Operations:")
+            print("\nAuthor Operations:")
             print("     1. Add a new author\n     2. View author details\n     3. Display all authors\n     4. Back to main menu")
             try:
                 authchoice = int(input("Please enter a numeric selection. "))       # Try to catch weird entries. We DO need to have ints here.
