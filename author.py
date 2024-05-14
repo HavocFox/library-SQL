@@ -6,12 +6,6 @@ class Author:
         self.__name = name
         self.__biography = biography
 
-    # Getter methods for private attributes
-    def get_name(self):
-        return self.__name
-
-    def get_biography(self):
-        return self.__biography
 
     # Add an author (Based on input from Operations) ------------------------
     @classmethod
@@ -30,7 +24,7 @@ class Author:
                 if existing_auth:
                     print("This author is already present in the database.")
                 else:
-                    # Insert the new book
+                    # Insert the new author
                     new_auth = (name1, bio1)
                     insert_query = "INSERT INTO Authors (name, bio) VALUES (%s, %s)"
                     cursor.execute(insert_query, new_auth)
@@ -58,10 +52,11 @@ class Author:
                 existing_auth = cursor.fetchone()
                 cursor.fetchall()
 
+
                 if existing_auth:
-                    print("Book found!")
-                    auth_id = existing_auth[0]
-                    print(f"Author Details: {auth_id}")
+                    print("Author found!")
+                    auth_id = existing_auth
+                    print(f"Author Details: \nName: {auth_id[1]} \nBiography: {auth_id[2]} \n")
 
                 else:
                     print("That author could not be found.")
@@ -79,18 +74,20 @@ class Author:
 
     # Display all authors ------------------------------------------------------
     def display_authors():
-        print("\nDisplaying all authors: ")
+        print("\nDisplaying all authors:\n")
 
         conn = connect_db()
         if conn is not None:
             try:
                 cursor = conn.cursor()
 
+                # Select all authors to display
                 query = "SELECT * from Authors"
                 cursor.execute(query)
-                if cursor.fetchall():
-                    for row in cursor.fetchall():
-                        print(row)
+                authors = cursor.fetchall()
+                if authors:
+                    for row in authors:
+                        print(f"Author Details: \nName: {row[1]} \nBiography: {row[2]} \n")
                 else:
                     print("No authors could be found.")
 

@@ -9,15 +9,6 @@ class User:
         self.__library_id = library_id
         self.__borrowed_books = []
 
-    # Getter methods for private attributes
-    def get_name(self):
-        return self.__name
-
-    def get_library_id(self):
-        return self.__library_id
-
-    def get_borrowed_books(self):
-        return self.__borrowed_books
 
     # Add a user (Based on input from Operations) ------------------------
     @classmethod
@@ -34,23 +25,27 @@ class User:
                 cursor.fetchall()
 
             # Is this NOT the first logged in user, and we already have the entered user?
-                if existing_user and not User.first_user:  # Checking if this is not the first logged in user
+                if existing_user and not User.first_user:       # Checking if this is not the first logged in user
                     user_switch = input("This user already exists. Would you like to switch to this user? Y or N. ").upper()
 
                     if user_switch == 'Y':
                         print(f"User switched to {name1}.\n")
-                        User.current_user = name1  # Update current user
+                        User.current_user = name1               # Update current user
                         return
 
                 else:
                 # Insert the new user
                     query = "INSERT INTO Users (name, libid) VALUES (%s, %s)"
                     cursor.execute(query, (name1, userid1))
-                    conn.commit()  # fully commit the changes
-                    print(f"User added successfully!")
+                    conn.commit()                               # fully commit the changes
+                    if User.first_user == False:
+                        print(f"User added successfully!")      # Flavor. Keep it out if it's the first time since a diff. message goes with that.
+                    else:
+                        pass
 
                 # Create a table for borrowed books for the new user if it doesn't exist
-                    query = f"CREATE TABLE IF NOT EXISTS {name1}_BorrowedBooks (id INT AUTO_INCREMENT PRIMARY KEY, book_title VARCHAR(255) NOT NULL)"
+                    name1_formatted = name1.replace(" ", "_").lower()       # SQL can't make tables with spaces or capital letters. So we format to make sure it's an accepted name.
+                    query = f"CREATE TABLE IF NOT EXISTS {name1_formatted}_BorrowedBooks (id INT AUTO_INCREMENT PRIMARY KEY, book_title VARCHAR(255) NOT NULL)"     # we FURTHER format it to be lowercase.
                     cursor.execute(query)
                     conn.commit()
 
@@ -66,13 +61,13 @@ class User:
                         User.current_user = name1
                         print("Introductory user added successfully.")
                         User.first_user = False
-                        return  # It's not required.
+                        return                         # This is our first time logging in.
 
             except Error as e:
                 print(f"Error: {e}")
 
             finally:
-                cursor.close()  # Don't forget to close!
+                cursor.close()                         # Don't forget to close!
                 conn.close()
 
 
@@ -86,13 +81,15 @@ class User:
                 cursor = conn.cursor()
                 nameget = User.current_user
 
+                # Find the user that matches you to show the details.
                 query = "SELECT * FROM Users WHERE name = %s"
                 cursor.execute(query, (User.current_user,))
                 existing_user = cursor.fetchone()
                 cursor.fetchall()
 
                 if existing_user:
-                    print(f"User Details:\n {existing_user}")
+                    print(f"\nUser Details:\nName: {existing_user[1]}\nLibrary ID: {existing_user[2]}")
+
                     # Retrieve borrowed books for the current user
                     query = f"SELECT * FROM {User.current_user}_BorrowedBooks"
                     cursor.execute(query)
@@ -100,7 +97,7 @@ class User:
                     if borrowed_books:
                         print("Borrowed books:")
                         for book_row in borrowed_books:
-                            print(book_row)
+                            print(f"{book_row[1]}\n")
                     else:
                         print("No borrowed books.")
 
@@ -129,17 +126,19 @@ class User:
                 query = "SELECT * FROM Users"
                 cursor.execute(query)
                 for user_row in cursor.fetchall():
-                    user_name = user_row[1]  # Assuming name is in the second column
-                    print(f"User: {user_name}")
+                    user_name = user_row[1]          # Assuming name is in the second column
+                    user_id = user_row[2]
+                    print(f"\nUser Details:\nName:{user_name}\nLibrary ID: {user_id}")
                 
                     # Retrieve borrowed books for the current user
                     query = f"SELECT * FROM {user_name}_BorrowedBooks"
                     cursor.execute(query)
                     borrowed_books = cursor.fetchall()
+
                     if borrowed_books:
                         print("Borrowed books:")
                         for book_row in borrowed_books:
-                            print(book_row)
+                            print(f"{book_row[1]}\n")
                     else:
                         print("No borrowed books.")
 
@@ -147,7 +146,7 @@ class User:
                 print(f"Error: {e}")
 
             finally:
-                cursor.close() # Don't forget to close!
+                cursor.close()                        # Don't forget to close!
                 conn.close()
 
         else:

@@ -103,7 +103,13 @@ class Menu:
                 if mainchoice == 3:
                     Menu.author_menu()
                 if mainchoice == 4:
-                    break
+                    conn = connect_db()
+                    cursor = conn.cursor()
+                    if conn and conn.is_connected():
+                        cursor.close()
+                        conn.close()                                                # ALWAYS MAKE SURE YOU CLOSE YOUR CONNECTION WHEN DONE
+                        print("MySQL Connection Closed")
+                        break                                                       # Maybe closing it here was redundant, but better safe than sorry?
                 if mainchoice < 1 or mainchoice > 4:
                     print("Please enter a valid numeric selection.\n")
 

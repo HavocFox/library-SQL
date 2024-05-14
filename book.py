@@ -11,52 +11,29 @@ class Book:
         self.__pubdate = pubdate
         self.__avail = True
 
-    # Getter methods for private attributes
-    def get_title(self):
-        return self.__title
-
-    def get_author(self):
-        return self.__author
-
-    def get_isbn(self):
-        return self.__isbn
-
-    def get_genre(self):
-        return self.__genre
-
-    def get_pubdate(self):
-        return self.__pubdate
-
-    def is_available(self):
-        return self.__avail
-
-    # Setter method for availability
-    def set_availability(self, status):
-        self.__avail = status
-
-
    # Add a book (Based on input from Operations) ------------------------
     @classmethod
 
-    def add_book(self, title1, author1, isbn1, genre1, pubdate1):
+    def add_book(self, title1, author1, isbn1, genre1, pubdate1, retdate1):
         conn = connect_db()
         if conn is not None:
             try:
                 cursor = conn.cursor()
 
                 # Check if the book already exists
-                query = "SELECT * FROM Books WHERE title = %s AND author = %s"
+                query = "SELECT * FROM Books WHERE title = %s AND author = %s"          # Select all books that match the input title and author (Since books can be named the same but by diff. people)
                 cursor.execute(query, (title1, author1))
                 existing_book = cursor.fetchone()
+                retdate1 = date.today().strftime('%Y-%m-%d')
 
-                if existing_book:
+                if existing_book:                                                       # Did we grab anything?
                     print("A book with the same title and author already exists.")
                 else:
                     # Insert the new book
-                    new_book = (title1, author1, isbn1, genre1, pubdate1)
-                    insert_query = "INSERT INTO Books (title, author, isbn, genre, publication_date) VALUES (%s, %s, %s, %s, %s)"
+                    new_book = (title1, author1, isbn1, genre1, pubdate1, retdate1)               # If we didn't grab anything, add the new one.
+                    insert_query = "INSERT INTO Books (title, author, isbn, genre, publication_date, returndate) VALUES (%s, %s, %s, %s, %s, %s)"
                     cursor.execute(insert_query, new_book)
-                    conn.commit()                                    # fully commits the changes
+                    conn.commit()                                                       # fully commits the changes
                     print(f"Book added successfully!")
 
             except Error as e:
@@ -104,7 +81,7 @@ class Book:
                 print(f"Error: {e}")
 
             finally:
-                cursor.close() # Don't forget to close!
+                cursor.close()                                   # Don't forget to close!
                 conn.close()
 
         else:
@@ -136,6 +113,12 @@ class Book:
                     query = "UPDATE Books SET availability = 1 WHERE id = %s"
                     cursor.execute(query, (book_id,))
                     conn.commit()
+                    # Update return date
+                    retdate1 = date.today().strftime('%Y-%m-%d')
+                    query = "UPDATE Books SET returndate = %s WHERE id = %s"
+                    cursor.execute(query, (retdate1, book_id))
+
+                    conn.commit()
 
                     # Remove the book from the user's borrowed books
                     delete_query = f"DELETE FROM {name1}_BorrowedBooks WHERE book_title = %s"
@@ -166,15 +149,19 @@ class Book:
                 cursor = conn.cursor()
 
                 # Check if the book exists and is NOT available
-                query = "SELECT * FROM Books WHERE title = %s"
+                query = "SELECT * FROM Books WHERE title = %s"      # Grab everything from books that matches the search
                 cursor.execute(query, (book_title,))
                 existing_book = cursor.fetchone()
                 cursor.fetchall()
 
-                if existing_book:
+                if existing_book:                                   # did our grab pick anything up? If so, go forward.
                     print("Book found!")
-                    book_id = existing_book[0]
-                    print(f"Book ID: {book_id}")
+                    book_id = existing_book           
+                    print(f"Book Details:\n----- \nName: {book_id[1]} \nAuthor: {book_id[2]}\nISBN: {book_id[3]}\nGenre: {book_id[4]}\nPublication Date (YYYY-MM-DD): {book_id[5]}\nLast Return Date (YYYY-MM-DD): {book_id[7]}")
+                    if book_id[6] == 0:
+                        print("Available?: No")
+                    else:
+                        print("Available?: Yes")
 
                 else:
                     print("No book with that title exists.")
@@ -183,7 +170,7 @@ class Book:
                 print(f"Error: {e}")
 
             finally:
-                cursor.close() # Don't forget to close!
+                cursor.close()                                      # Don't forget to close!
                 conn.close()
                                 
         else:
@@ -198,12 +185,17 @@ class Book:
             try:
                 cursor = conn.cursor()
 
-                # Check if the book already exists
-                query = "SELECT * from Books"
+                # Select everything from Books to display but do check if anything is IN Books.
+                query = "SELECT * from Books"       
                 cursor.execute(query)
-                if cursor.fetchall():
-                    for row in cursor.fetchall():
-                        print(row)
+                allbooks = cursor.fetchall()
+                if allbooks:
+                    for row in allbooks:
+                        print(f"\nBook Details:\n----- \nName: {row[1]} \nAuthor: {row[2]}\nISBN: {row[3]}\nGenre: {row[4]}\nPublication Date (YYYY-MM-DD): {row[5]}\nLast Return Date (YYYY-MM-DD): {row[7]}")
+                        if row[6] == 0:
+                            print("Available?: No")
+                        else:
+                            print("Available?: Yes")
                 else:
                     print("No books found.")
 
@@ -211,7 +203,7 @@ class Book:
                 print(f"Error: {e}")
 
             finally:
-                cursor.close() # Don't forget to close!
+                cursor.close()          # Don't forget to close!
                 conn.close()
                                 
         else:

@@ -11,9 +11,6 @@ from datetime import date
 
 # MAIN CODE ------------------------------------
 
-# Base author dictionary setup
-Author.add_author("Harper Lee", "Nelle Harper Lee was an American novelist whose 1960 novel To Kill a Mockingbird won the 1961 Pulitzer Prize and became a classic of modern American literature. She assisted her close friend Truman Capote in his research for the book In Cold Blood. Her second and final novel, Go Set a Watchman, was an earlier draft of Mockingbird that was published in July 2015 as a sequel.")
-
 print("\nConnecting to database...")
 conn = connect_db()
 if conn is not None:
@@ -25,27 +22,29 @@ if conn is not None:
             except Error as e:
                 print(f"Error: {e}")
 
-print("Welcome to the Library Management System! ")
-tempuser = input("Please log in. Enter your username: ")        # This is so we don't start with no users in the database. We always need one to track.
+print("Welcome to the Library Management System!")
 while True:
-    tempid = input("Enter your library ID: ")                   # Enter as a string since we don't need to use it as an integer ever.
-    if tempid.isdigit():                                        # We can still check if it's digits.
-        User.add_user(tempuser, tempid)
-        User.current_user = tempuser                            # Set tracked user to the one that just logged in.
-        break
+    tempuser = input("Please log in. Enter your username: ")        # This is so we don't start with no users in the database. We always need one to track.
+    if ' ' in tempuser:
+        print("Invalid username. Please enter a username without spaces.")
     else:
-       print("Invalid ID. Please enter a valid ID.")
+        tempid = input("Enter your library ID: ")                   # Enter as a string since we don't need to use it as an integer ever.
+        if tempid.isdigit():                                        # We can still check if it's digits.
+            User.add_user(tempuser, tempid)
+            User.current_user = tempuser                            # Set tracked user to the one that just logged in.
+            print(f"\nWelcome, {User.current_user}.\n")
+            Menu.main_menu()
+            break
+        else:
+            print("Invalid ID. Please enter a valid ID.")
+
 
 print(f"\nWelcome, {User.current_user}.\n")                     # Welcome the user that just logged in
 Menu.main_menu()                                                # Now we call the menus to display. From here we don't use this .py anymore
 
-# THINGS TO REMEMBER (delete when submitting)
-    # Add some default books
-    # Add some default authors
+# SQL Library has been attached for a base library of books and authors.
 
-    # Am I able to submit the SQL library I made or do I need to create tables within the program?
-    # Get printed details formatted better, tuples printing looks like shit.
-    # Checking for correctly formatted entries
-    # Fix the weird datetime thing - borrow_date = date.today().isoformat() this?
-    # How do we get all the garbage entries out of the table? - USE MYSQL and delete them but BE CAREFUL or you might wipe the table. Manually add in some new books when you're done - same for authors
-    # Don't forget to close the connection when quitting!
+# ERRORS...
+# Exit message prints twice.
+# Returning books as a user who does not have the book WILL return the book but say it doesn't exist.
+# Don't let them return the book if it is NOT found in the respective user's table of borrowed books AND it is unavailable.

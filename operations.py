@@ -37,7 +37,12 @@ class Operations:
     # USER OPERATIONS ----------------------------------------------
     # Add a user:
     def add_user():
-        name = input("Please enter the user's name. ")
+        while True:
+            name = input("Please enter the username. ")
+            if ' ' in name:
+                 print("Invalid username. Please enter a username without spaces.")
+            else:
+                 break
         while True:
             userid = input("Please enter the user's library ID. ")                    # I don't know what this library's IDs are usually like, so we're just restricting them to being digits without length rules.
             if userid.isdigit():
