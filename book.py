@@ -21,8 +21,8 @@ class Book:
                 cursor = conn.cursor()
 
                 # Check if the book already exists
-                query = "SELECT * FROM Books WHERE title = %s AND author = %s"          # Select all books that match the input title and author (Since books can be named the same but by diff. people)
-                cursor.execute(query, (title1, author1))
+                query = "SELECT * FROM Books WHERE title = %s"          # Select all books that match the input title
+                cursor.execute(query, (title1,))
                 existing_book = cursor.fetchone()
                 retdate1 = date.today().strftime('%Y-%m-%d')
 
@@ -107,25 +107,37 @@ class Book:
                 existing_book = cursor.fetchone()
                 cursor.fetchall()
 
-                if existing_book:
-                    # Update the availability of the book
-                    book_id = existing_book[0]
-                    query = "UPDATE Books SET availability = 1 WHERE id = %s"
-                    cursor.execute(query, (book_id,))
-                    conn.commit()
-                    # Update return date
-                    retdate1 = date.today().strftime('%Y-%m-%d')
-                    query = "UPDATE Books SET returndate = %s WHERE id = %s"
-                    cursor.execute(query, (retdate1, book_id))
 
-                    conn.commit()
+                if existing_book:                               # Does the book exist in the first place?
+                    query = f"SELECT * FROM {name1}_BorrowedBooks WHERE book_title = %s"
+                    cursor.execute(query, (book_title,))
+                    user_has_book = cursor.fetchone()
+                    cursor.fetchall()
+ 
+                    if user_has_book:                           # Do you HAVE the book you are trying to return?
 
-                    # Remove the book from the user's borrowed books
-                    delete_query = f"DELETE FROM {name1}_BorrowedBooks WHERE book_title = %s"
-                    cursor.execute(delete_query, (book_title,))
-                    conn.commit()
+                        # Update the availability of the book
+                        book_id = existing_book[0]
+                        query = "UPDATE Books SET availability = 1 WHERE id = %s"
+                        cursor.execute(query, (book_id,))
+                        conn.commit()
+                        # Update return date
+                        retdate1 = date.today().strftime('%Y-%m-%d')
+                        query = "UPDATE Books SET returndate = %s WHERE id = %s"
+                        cursor.execute(query, (retdate1, book_id))
 
-                    print(f"{book_title} has been returned.\n")  # Let the user know what they did.
+                        conn.commit()
+
+                        # Remove the book from the user's borrowed books
+                        delete_query = f"DELETE FROM {name1}_BorrowedBooks WHERE book_title = %s"
+                        cursor.execute(delete_query, (book_title,))
+                        conn.commit()
+
+                        print(f"{book_title} has been returned.\n")  # Let the user know what they did.
+
+                    else:
+                        print("Another user borrowed this book. Please log into that user to return it.")
+                        
                 else:
                     print("No book with that title exists or your book has already been returned.\n")
 

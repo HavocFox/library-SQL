@@ -37,14 +37,11 @@ while True:
             break
         else:
             print("Invalid ID. Please enter a valid ID.")
+    print(f"\nWelcome, {User.current_user}.\n")                     # Welcome the user that just logged in
+    Menu.main_menu()                                                # Now we call the menus to display. From here we don't use this .py anymore
+    break
 
 
-print(f"\nWelcome, {User.current_user}.\n")                     # Welcome the user that just logged in
-Menu.main_menu()                                                # Now we call the menus to display. From here we don't use this .py anymore
+
 
 # SQL Library has been attached for a base library of books and authors.
-
-# ERRORS...
-# Exit message prints twice.
-# Returning books as a user who does not have the book WILL return the book but say it doesn't exist.
-# Don't let them return the book if it is NOT found in the respective user's table of borrowed books AND it is unavailable.

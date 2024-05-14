@@ -42,7 +42,8 @@ INSERT INTO Books (title, author, isbn, genre, publication_date, returndate) VAL
 
 
 # Don't use this, it is DEBUG ONLY to reset the program's data testing
-DROP TABLE IF EXISTS testy_borrowedbooks;
+DROP TABLE IF EXISTS testing_borrowedbooks;
+
 
 DELETE FROM Books WHERE 1;
 DELETE FROM Users WHERE 1;
